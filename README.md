@@ -299,9 +299,9 @@ python -c "from resistor_cv import *; print('CV module loaded')"
 
 Если у вас возникли проблемы или вопросы:
 
-1. Проверьте [Issues](https://github.com/yourusername/resistor-bot/issues)
+1. Проверьте [Issues](https://github.com/cirodil/resistor-bot/issues)
 2. Создайте новое Issue с описанием проблемы
-3. Напишите в Telegram: [@yourusername](https://t.me/yourusername)
+3. Напишите в Telegram: [@kvgorodetsky](https://t.me/kvgorodetsky)
 
 ## 🙏 Благодарности
 
