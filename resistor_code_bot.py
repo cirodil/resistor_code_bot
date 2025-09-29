@@ -1,24 +1,55 @@
 import logging
 import re
+import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image
 import pytesseract
 import io
 import cv2
 import numpy as np
+from dotenv import load_dotenv
+
+# Загрузка переменных окружения
+load_dotenv()
 
 # Настройка логирования
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    level=os.getenv('BOT_LOG_LEVEL', 'INFO')
 )
 
-# Импортируем функции из наших модулей
-from resistor_cv import recognize_resistor_cv, preprocess_resistor_image
-from smd_decoder import smd_to_resistance, resistance_to_smd, validate_smd_code
+# Настройка Tesseract (для Windows)
+tesseract_path = os.getenv('TESSERACT_PATH')
+if tesseract_path and os.path.exists(tesseract_path):
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
-# Цветовая маркировка резисторов
+# Проверка обязательных переменных
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+if not BOT_TOKEN:
+    logging.error("❌ BOT_TOKEN не найден в переменных окружения!")
+    exit(1)
+
+# Импортируем функции из наших модулей
+try:
+    from resistor_cv import recognize_resistor_cv
+    from smd_decoder import smd_to_resistance, resistance_to_smd, validate_smd_code
+except ImportError as e:
+    logging.error(f"❌ Ошибка импорта модулей: {e}")
+    # Создаем заглушки для тестирования
+    def recognize_resistor_cv(img):
+        return "Модуль CV не доступен"
+    
+    def smd_to_resistance(code):
+        return None
+    
+    def resistance_to_smd(value):
+        return "Модуль SMD не доступен"
+    
+    def validate_smd_code(code):
+        return False
+
+# Цветовая маркировка резисторов (русские названия как основные)
 COLOR_CODES = {
     'черный': 0, 'black': 0,
     'коричневый': 1, 'brown': 1,
@@ -61,8 +92,44 @@ TOLERANCE = {
     'нет': '±20%'
 }
 
+# Словарь для преобразования английских названий в русские
+EN_TO_RU_COLORS = {
+    'black': 'черный',
+    'brown': 'коричневый', 
+    'red': 'красный',
+    'orange': 'оранжевый',
+    'yellow': 'желтый',
+    'green': 'зеленый',
+    'blue': 'синий',
+    'violet': 'фиолетовый',
+    'purple': 'фиолетовый',
+    'gray': 'серый',
+    'grey': 'серый',
+    'white': 'белый',
+    'gold': 'золотой',
+    'silver': 'серебряный'
+}
+
+# Контекст пользователя для хранения текущего режима
+user_context = {}
+
+def convert_colors_to_russian(colors):
+    """Преобразует названия цветов на русский язык"""
+    russian_colors = []
+    for color in colors:
+        color_lower = color.lower()
+        if color_lower in EN_TO_RU_COLORS:
+            russian_colors.append(EN_TO_RU_COLORS[color_lower])
+        else:
+            # Если цвет уже на русском, оставляем как есть
+            russian_colors.append(color)
+    return russian_colors
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /start"""
+    user_id = update.effective_user.id
+    user_context[user_id] = 'main'  # Сбрасываем контекст
+    
     welcome_text = """
 🤖 *Resistor Bot* - универсальный помощник по резисторам
 
@@ -96,67 +163,73 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await update.message.reply_text(welcome_text, parse_mode='Markdown', reply_markup=reply_markup)
+    if update.message:
+        await update.message.reply_text(welcome_text, parse_mode='Markdown', reply_markup=reply_markup)
+    else:
+        await update.callback_query.message.reply_text(welcome_text, parse_mode='Markdown', reply_markup=reply_markup)
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик нажатий кнопок"""
     query = update.callback_query
     await query.answer()
     
+    user_id = query.from_user.id
+    
     if query.data == "throughhole":
+        user_context[user_id] = 'throughhole'
         text = """
-🎨 *Работа с цилиндрическими резисторами*
+🎨 *Режим: Цилиндрические резисторы*
 
-*Определение номинала по цветам:*
-Отправьте цвета полос через пробел
-Пример: `красный фиолетовый желтый золотой`
+Теперь отправьте:
+• Цвета полос для определения номинала
+• Номинал для получения цветовой маркировки
 
-*Получение цветовой маркировки:*
-Отправьте номинал резистора
-Пример: `1.5к`, `470 Ом`, `2.2М`
-
-*Форматы:*
-• 4-полосная маркировка
-• 5-полосная маркировка
+*Примеры:*
+`красный фиолетовый желтый золотой`
+`1.5к` 
+`470 Ом`
+`2.2М`
         """
         
     elif query.data == "smd":
+        user_context[user_id] = 'smd'
         text = """
-🔤 *Работа с SMD резисторами*
+🔤 *Режим: SMD резисторы*
 
-*Расшифровка кода:*
-Отправьте SMD код
-Пример: `103`, `4R7`, `01C`, `R047`
+Теперь отправьте:
+• SMD код для расшифровки
+• Номинал для генерации кода
 
-*Генерация кода:*
-Отправьте номинал
-Пример: `10к`, `4.7 Ом`, `100к`
+*Примеры кодов:*
+`103` = 10 кОм
+`4R7` = 4.7 Ом  
+`01C` = 10 кОм (E96)
+`R047` = 0.047 Ом
 
-*Поддерживаемые форматы:*
-• 3-значный код (E24)
-• 4-значный код (E96)  
-• Коды с R (меньше 100 Ом)
-• Серии E24, E48, E96
+*Примеры номиналов:*
+`10к`, `4.7 Ом`, `100к`, `0.47`
         """
         
     elif query.data == "photo":
+        user_context[user_id] = 'photo'
         text = """
-📷 *Распознавание по фото*
+📷 *Режим: Распознавание по фото*
 
-*Для цилиндрических резисторов:*
-• Сфотографируйте резистор так, чтобы были видны цветные полосы
-• Используйте хорошее освещение
+Отправьте фото:
+• Цилиндрического резистора (цветные полосы)
+• SMD резистора (текстовый код)
+
+*Советы для лучшего распознавания:*
+• Хорошее освещение
+• Четкий фокус
 • Контрастный фон
-
-*Для SMD резисторов:*
-• Сфотографируйте код на чипе
-• Убедитесь, что текст четкий
 • Прямой угол съемки
 
-Бот автоматически определит тип резистора и попытается распознать его.
+Бот автоматически определит тип резистора.
         """
         
     elif query.data == "help":
+        user_context[user_id] = 'main'
         text = """
 ℹ️ *Помощь по использованию*
 
@@ -171,15 +244,58 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Номинал → Цвета: `1к`, `470 Ом`
 SMD код → Номинал: `103`, `4R7`
 Номинал → SMD код: `10к`, `4.7 Ом`
+
+*Распознавание по фото:*
+Отправьте четкое фото резистора. Для лучшего результата:
+• Используйте хорошее освещение
+• Контрастный фон
+• Четко видимые цветные полосы или текст
         """
     
+    elif query.data == "back":
+        # Возврат к главному меню
+        user_context[user_id] = 'main'
+        welcome_text = """
+🤖 *Resistor Bot* - универсальный помощник по резисторам
+
+Выберите нужный режим работы:
+        """
+        keyboard = [
+            [InlineKeyboardButton("🎨 Цилиндрические", callback_data="throughhole")],
+            [InlineKeyboardButton("🔤 SMD резисторы", callback_data="smd")],
+            [InlineKeyboardButton("📷 Распознавание фото", callback_data="photo")],
+            [InlineKeyboardButton("ℹ️ Помощь", callback_data="help")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(
+            text=welcome_text, 
+            parse_mode='Markdown', 
+            reply_markup=reply_markup
+        )
+        return
+    
+    else:
+        # Неизвестная команда - возвращаем в главное меню
+        user_context[user_id] = 'main'
+        await start(update, context)
+        return
+    
+    # Для всех остальных случаев показываем кнопку "Назад"
     keyboard = [[InlineKeyboardButton("🔙 Назад", callback_data="back")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.edit_message_text(text=text, parse_mode='Markdown', reply_markup=reply_markup)
+    await query.edit_message_text(
+        text=text, 
+        parse_mode='Markdown', 
+        reply_markup=reply_markup
+    )
 
 async def throughhole_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Команда для работы с цилиндрическими резисторами"""
+    user_id = update.effective_user.id
+    user_context[user_id] = 'throughhole'
+    
     help_text = """
 🎨 *Режим: Цилиндрические резисторы*
 
@@ -197,6 +313,9 @@ async def throughhole_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def smd_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Команда для работы с SMD резисторами"""
+    user_id = update.effective_user.id
+    user_context[user_id] = 'smd'
+    
     help_text = """
 🔤 *Режим: SMD резисторы*
 
@@ -217,6 +336,9 @@ async def smd_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Команда для распознавания по фото"""
+    user_id = update.effective_user.id
+    user_context[user_id] = 'photo'
+    
     help_text = """
 📷 *Режим: Распознавание по фото*
 
@@ -231,6 +353,34 @@ async def photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 • Прямой угол съемки
 
 Бот автоматически определит тип резистора.
+    """
+    await update.message.reply_text(help_text, parse_mode='Markdown')
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработчик команды /help"""
+    user_id = update.effective_user.id
+    user_context[user_id] = 'main'
+    
+    help_text = """
+📖 *Справка по использованию*
+
+*Основные команды:*
+`/start` - начать работу
+`/throughhole` - цилиндрические резисторы  
+`/smd` - SMD резисторы
+`/photo` - распознавание фото
+
+*Примеры запросов:*
+Цвета → Номинал: `коричневый черный красный золотой`
+Номинал → Цвета: `1к`, `470 Ом`
+SMD код → Номинал: `103`, `4R7`
+Номинал → SMD код: `10к`, `4.7 Ом`
+
+*Распознавание по фото:*
+Отправьте четкое фото резистора. Для лучшего результата:
+• Используйте хорошее освещение
+• Контрастный фон
+• Четко видимые цветные полосы или текст
     """
     await update.message.reply_text(help_text, parse_mode='Markdown')
 
@@ -284,9 +434,9 @@ def resistance_to_colors(resistance_str):
         value = float(value)
         
         # Конвертируем в Омы
-        if unit.lower() in ['к', 'k']:
+        if unit and unit.lower() in ['к', 'k']:
             value *= 1000
-        elif unit.lower() in ['м', 'm']:
+        elif unit and unit.lower() in ['м', 'm']:
             value *= 1000000
         
         resistance = int(value)
@@ -313,19 +463,21 @@ def resistance_to_colors(resistance_str):
         multiplier_exp = len(str(resistance)) - len(digits)
         multiplier_value = 10 ** multiplier_exp
         
-        # Ищем цвета
-        reverse_color_map = {v: k for k, v in COLOR_CODES.items() if v >= 0}
-        reverse_multiplier_map = {v: k for k, v in MULTIPLIERS.items()}
+        # Ищем цвета (используем русские названия)
+        reverse_color_map = {v: k for k, v in COLOR_CODES.items() if v >= 0 and k in ['черный', 'коричневый', 'красный', 'оранжевый', 'желтый', 'зеленый', 'синий', 'фиолетовый', 'серый', 'белый']}
+        reverse_multiplier_map = {v: k for k, v in MULTIPLIERS.items() if k in ['черный', 'коричневый', 'красный', 'оранжевый', 'желтый', 'зеленый', 'синий', 'фиолетовый', 'серый', 'белый', 'золотой', 'серебряный']}
         
         colors = []
         for digit in digits[:2] if num_bands == 4 else digits[:3]:
-            colors.append(reverse_color_map[digit])
+            color = reverse_color_map.get(digit)
+            if color:
+                colors.append(color)
         
         # Цвет множителя
         multiplier_color = reverse_multiplier_map.get(multiplier_value)
         if not multiplier_color:
             # Находим ближайший
-            possible_multipliers = [(abs(k - multiplier_value), v) for k, v in MULTIPLIERS.items() if k not in [0.1, 0.01]]
+            possible_multipliers = [(abs(k - multiplier_value), v) for k, v in MULTIPLIERS.items() if k not in [0.1, 0.01] and k in ['черный', 'коричневый', 'красный', 'оранжевый', 'желтый', 'зеленый', 'синий', 'фиолетовый', 'серый', 'белый']]
             possible_multipliers.sort()
             multiplier_color = possible_multipliers[0][1] if possible_multipliers else 'черный'
         
@@ -339,21 +491,25 @@ def resistance_to_colors(resistance_str):
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик текстовых сообщений"""
-    text = update.message.text.strip().lower()
+    user_id = update.effective_user.id
+    text = update.message.text.strip()
     
-    # Автоматическое определение типа запроса
-    if any(word in COLOR_CODES for word in text.split()):
+    # Получаем текущий контекст пользователя
+    current_context = user_context.get(user_id, 'main')
+    
+    # Определяем тип запроса на основе контекста и содержимого
+    words = text.lower().split()
+    
+    # Если явно указаны цвета - обрабатываем как цвета независимо от контекста
+    if words and all(word in COLOR_CODES for word in words):
         # Запрос с цветами - цилиндрический резистор
-        words = text.split()
-        if all(word in COLOR_CODES for word in words):
-            resistance, tolerance = colors_to_resistance(words)
-            if resistance:
-                response = f"🎯 *Номинал резистора:* {resistance}\n📊 *Допуск:* {tolerance}"
-            else:
-                response = tolerance
+        resistance, tolerance = colors_to_resistance(words)
+        if resistance:
+            response = f"🎯 *Номинал резистора:* {resistance}\n📊 *Допуск:* {tolerance}"
         else:
-            response = "❌ Не все цвета распознаны. Проверьте написание."
+            response = tolerance
             
+    # Если явно указан SMD код - обрабатываем как SMD независимо от контекста
     elif validate_smd_code(text):
         # SMD код
         result = smd_to_resistance(text)
@@ -363,19 +519,58 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             response = f"❌ Не удалось расшифровать SMD код: `{text}`"
             
+    # Если контекст явно указан - используем его
+    elif current_context == 'throughhole':
+        # В контексте цилиндрических резисторов - пробуем как номинал для цветовой маркировки
+        colors, num_bands = resistance_to_colors(text)
+        if colors:
+            # Преобразуем цвета в русские названия
+            russian_colors = convert_colors_to_russian(colors)
+            colors_str = ' → '.join(russian_colors)
+            band_type = "4-полосной" if num_bands == 4 else "5-полосной"
+            response = f"🎨 *Цветовая маркировка* ({band_type}):\n`{colors_str}`"
+        else:
+            response = ("❌ Не удалось распознать номинал для цветовой маркировки.\n\n"
+                      "Примеры:\n"
+                      "• `1к` → 1000 Ом\n"
+                      "• `470 Ом` → 470 Ом\n"
+                      "• `2.2М` → 2.2 МОм")
+            
+    elif current_context == 'smd':
+        # В контексте SMD резисторов - пробуем как номинал для SMD кода
+        smd_result = resistance_to_smd(text)
+        if smd_result and "Не удалось" not in smd_result and "Ошибка" not in smd_result:
+            if isinstance(smd_result, tuple) and len(smd_result) == 3:
+                value, codes, series = smd_result
+                codes_str = "\n".join([f"• `{code}` ({s})" for code, s in zip(codes, series)])
+                response = f"💎 *Номинал:* {value}\n🔤 *SMD коды:*\n{codes_str}"
+            else:
+                response = f"💎 {smd_result}"
+        else:
+            response = ("❌ Не удалось сгенерировать SMD код.\n\n"
+                      "Примеры:\n"
+                      "• `10к` → 103, 01C\n"
+                      "• `4.7 Ом` → 4R7\n"
+                      "• `100к` → 104, 01D")
+    
     else:
-        # Попытка распознать как номинал
+        # Автоматическое определение в главном меню
         # Сначала пробуем как SMD
         smd_result = resistance_to_smd(text)
-        if smd_result and smd_result != "Неверный формат номинала":
-            value, codes, series = smd_result
-            codes_str = "\n".join([f"• `{code}` ({s})" for code, s in zip(codes, series)])
-            response = f"💎 *Номинал:* {value}\n🔤 *SMD коды:*\n{codes_str}"
+        if smd_result and "Не удалось" not in smd_result and "Ошибка" not in smd_result:
+            if isinstance(smd_result, tuple) and len(smd_result) == 3:
+                value, codes, series = smd_result
+                codes_str = "\n".join([f"• `{code}` ({s})" for code, s in zip(codes, series)])
+                response = f"💎 *Номинал:* {value}\n🔤 *SMD коды:*\n{codes_str}"
+            else:
+                response = f"💎 {smd_result}"
         else:
             # Пробуем как цилиндрический
             colors, num_bands = resistance_to_colors(text)
             if colors:
-                colors_str = ' → '.join(colors)
+                # Преобразуем цвета в русские названия
+                russian_colors = convert_colors_to_russian(colors)
+                colors_str = ' → '.join(russian_colors)
                 band_type = "4-полосной" if num_bands == 4 else "5-полосной"
                 response = f"🎨 *Цветовая маркировка* ({band_type}):\n`{colors_str}`"
             else:
@@ -383,7 +578,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                           "Возможные варианты:\n"
                           "• Цвета полос: `красный фиолетовый желтый золотой`\n"
                           "• Номинал: `1к`, `470 Ом`\n"
-                          "• SMD код: `103`, `4R7`")
+                          "• SMD код: `103`, `4R7`\n\n"
+                          "Используйте команды для выбора режима:\n"
+                          "`/throughhole` - цилиндрические резисторы\n"
+                          "`/smd` - SMD резисторы")
     
     await update.message.reply_text(response, parse_mode='Markdown')
 
@@ -419,13 +617,13 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Пытаемся распознать как цилиндрический резистор с помощью CV
         cv_result = recognize_resistor_cv(image_cv)
         
-        if cv_result and "Не удалось" not in cv_result:
+        if cv_result and "Не удалось" not in cv_result and "Ошибка" not in cv_result:
             response = f"📷 *Распознано (CV):*\n{cv_result}"
             await update.message.reply_text(response, parse_mode='Markdown')
             return
         
         # Если CV не сработало, пробуем OCR для SMD кодов
-        await update.message.reply_text("👁️ Пробую распознать SMD код...")
+        await update.message.reply_text("👁️ Пробую распознать текст...")
         
         image_pil = Image.open(io.BytesIO(photo_bytes))
         processed_image = preprocess_image_for_ocr(image_pil)
@@ -453,7 +651,9 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # Пробуем распознать как обычный номинал
                 colors, num_bands = resistance_to_colors(cleaned_text)
                 if colors:
-                    colors_str = ' → '.join(colors)
+                    # Преобразуем цвета в русские названия
+                    russian_colors = convert_colors_to_russian(colors)
+                    colors_str = ' → '.join(russian_colors)
                     band_type = "4-полосной" if num_bands == 4 else "5-полосной"
                     response = (f"📷 *Распознано:* `{cleaned_text}`\n"
                               f"🎨 *Цветовая маркировка* ({band_type}):\n`{colors_str}`")
@@ -467,31 +667,41 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(response, parse_mode='Markdown')
         
     except Exception as e:
+        logging.error(f"Ошибка обработки изображения: {e}")
         await update.message.reply_text(f"❌ Ошибка обработки изображения: {str(e)}")
 
 def main():
     """Основная функция"""
-    TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
-    
-    application = Application.builder().token(TOKEN).build()
-    
-    # Обработчики команд
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("throughhole", throughhole_command))
-    application.add_handler(CommandHandler("smd", smd_command))
-    application.add_handler(CommandHandler("photo", photo_command))
-    application.add_handler(CommandHandler("help", help_command))
-    
-    # Обработчики кнопок
-    application.add_handler(CallbackQueryHandler(button_handler))
-    
-    # Обработчики сообщений
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-    application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-    
-    # Запуск бота
-    print("🤖 Бот запущен с поддержкой SMD резисторов!")
-    application.run_polling()
+    try:
+        application = Application.builder().token(BOT_TOKEN).build()
+        
+        # Обработчики команд
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("throughhole", throughhole_command))
+        application.add_handler(CommandHandler("smd", smd_command))
+        application.add_handler(CommandHandler("photo", photo_command))
+        application.add_handler(CommandHandler("help", help_command))
+        
+        # Обработчики кнопок
+        application.add_handler(CallbackQueryHandler(button_handler))
+        
+        # Обработчики сообщений
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+        application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+        
+        # Запуск бота
+        logging.info("🤖 Бот запущен с поддержкой SMD резисторов!")
+        print("=" * 50)
+        print("🤖 Resistor Bot успешно запущен!")
+        print("📍 Используйте /start в Telegram")
+        print("🔧 Для остановки нажмите Ctrl+C")
+        print("=" * 50)
+        
+        application.run_polling()
+        
+    except Exception as e:
+        logging.error(f"❌ Критическая ошибка: {e}")
+        exit(1)
 
 if __name__ == '__main__':
     main()
