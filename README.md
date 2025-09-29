@@ -1,4 +1,4 @@
-# 🤖 Resistor Bot - Универсальный бот для работы с резисторами
+# 🤖 Resistor Code Bot - Универсальный бот для работы с резисторами
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Telegram](https://img.shields.io/badge/Telegram-Bot-blue.svg)
@@ -57,18 +57,18 @@ TOKEN = "YOUR_TELEGRAM_BOT_TOKEN_HERE"
 3. **Запустите бота**:
 
 ```bash
-python resistor_bot.py
+python resistor_code_bot.py
 ```
 
 ## 📁 Структура проекта
 
 ```
 resistor-bot/
-├── resistor_bot.py          # Основной файл бота
+├── resistor_code_bot.py     # Основной файл бота
 ├── resistor_cv.py           # Модуль компьютерного зрения
 ├── smd_decoder.py           # Декодер SMD резисторов
 ├── requirements.txt         # Зависимости
-└── README.md               # Документация
+└── README.md                # Документация
 ```
 
 ## 🎯 Использование
@@ -189,8 +189,8 @@ _Ответ: 103 (E24), 01C (E96)_
 
 ```bash
 # Клонирование репозитория
-git clone https://github.com/yourusername/resistor-bot.git
-cd resistor-bot
+git clone https://github.com/cirodil/resistor_code_bot.git
+cd resistor_code_bot
 
 # Создание виртуального окружения
 python -m venv venv
@@ -202,7 +202,7 @@ venv\Scripts\activate  # Windows
 pip install -r requirements.txt
 
 # Запуск в режиме разработки
-python resistor_bot.py
+python resistor_code_bot.py
 ```
 
 ### Переменные окружения
