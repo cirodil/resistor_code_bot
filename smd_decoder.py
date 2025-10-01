@@ -114,10 +114,10 @@ def smd_to_resistance(code):
 def resistance_to_smd(resistance_str):
     """Преобразование значения сопротивления в SMD коды"""
     try:
-        # Parse resistance value
-        match = re.search(r'(\d+\.?\d*)\s*([кмkKmM]?)\s*[оОoOmM]?', resistance_str)
+        # Parse resistance value (support both Russian and English units)
+        match = re.search(r'(\d+\.?\d*)\s*([кkKmM]?)\s*[оОoO]?[hmHM]?', resistance_str)
         if not match:
-            return "Неверный формат номинала"
+            return "Invalid value format"
         
         value, unit = match.groups()
         value = float(value)
@@ -156,10 +156,10 @@ def resistance_to_smd(resistance_str):
             formatted_value = format_resistance(resistance)
             return formatted_value, codes, series_types
         else:
-            return "Не удалось подобрать SMD код для данного номинала"
+            return "Could not find SMD code for this value"
     
     except Exception as e:
-        return f"Ошибка преобразования: {str(e)}"
+        return f"Conversion error: {str(e)}"
 
 def resistance_to_e24(resistance):
     """Преобразование в E24 код (3-digit)"""
@@ -217,10 +217,10 @@ def resistance_to_r_format(resistance):
 def format_resistance(value):
     """Форматирование значения сопротивления"""
     if value >= 1000000:
-        return f"{value / 1000000:.2f} МОм"
+        return f"{value / 1000000:.2f} MOhm"
     elif value >= 1000:
-        return f"{value / 1000:.2f} кОм"
+        return f"{value / 1000:.2f} kOhm"
     elif value < 1:
-        return f"{value:.3f} Ом"
+        return f"{value:.3f} Ohm"
     else:
-        return f"{value:.1f} Ом".rstrip('0').rstrip('.')
+        return f"{value:.1f} Ohm".rstrip('0').rstrip('.')
