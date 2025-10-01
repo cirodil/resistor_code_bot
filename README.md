@@ -1,4 +1,4 @@
-# 🤖 Resistor Bot - Универсальный помощник по резисторам
+# 🤖 Resistor Code Bot - Универсальный помощник по резисторам
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Telegram](https://img.shields.io/badge/Telegram-Bot-blue.svg)
