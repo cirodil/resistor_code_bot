@@ -1,22 +1,5 @@
 import re
-
-# E24 series (3-digit code)
-E24_VALUES = [
-    1.0, 1.1, 1.2, 1.3, 1.5, 1.6, 1.8, 2.0, 2.2, 2.4, 2.7, 3.0,
-    3.3, 3.6, 3.9, 4.3, 4.7, 5.1, 5.6, 6.2, 6.8, 7.5, 8.2, 9.1
-]
-
-# E96 series (4-digit code with multiplier letter)
-E96_VALUES = [
-    1.00, 1.02, 1.05, 1.07, 1.10, 1.13, 1.15, 1.18, 1.21, 1.24, 1.27, 1.30,
-    1.33, 1.37, 1.40, 1.43, 1.47, 1.50, 1.54, 1.58, 1.62, 1.65, 1.69, 1.74,
-    1.78, 1.82, 1.87, 1.91, 1.96, 2.00, 2.05, 2.10, 2.15, 2.21, 2.26, 2.32,
-    2.37, 2.43, 2.49, 2.55, 2.61, 2.67, 2.74, 2.80, 2.87, 2.94, 3.01, 3.09,
-    3.16, 3.24, 3.32, 3.40, 3.48, 3.57, 3.65, 3.74, 3.83, 3.92, 4.02, 4.12,
-    4.22, 4.32, 4.42, 4.53, 4.64, 4.75, 4.87, 4.99, 5.11, 5.23, 5.36, 5.49,
-    5.62, 5.76, 5.90, 6.04, 6.19, 6.34, 6.49, 6.65, 6.81, 6.98, 7.15, 7.32,
-    7.50, 7.68, 7.87, 8.06, 8.25, 8.45, 8.66, 8.87, 9.09, 9.31, 9.53, 9.76
-]
+from resistor_data import E24_SERIES, E96_SERIES
 
 # E96 multiplier codes (letters)
 E96_MULTIPLIERS = {
@@ -184,7 +167,7 @@ def resistance_to_e24(resistance):
         return None
     
     # Find closest E24 value
-    for e24_val in E24_VALUES:
+    for e24_val in E24_SERIES:
         for exp in range(-2, 7):  # From 0.01 to 10M
             calculated = e24_val * (10 ** exp)
             if abs(calculated - resistance) / resistance < 0.1:  # 10% tolerance
@@ -201,7 +184,7 @@ def resistance_to_e96(resistance):
         return None
     
     # Find closest E96 value
-    for e96_val in E96_VALUES:
+    for e96_val in E96_SERIES:
         for mult_code, multiplier in E96_MULTIPLIERS.items():
             calculated = e96_val * multiplier
             if abs(calculated - resistance) / resistance < 0.01:  # 1% tolerance
@@ -241,11 +224,3 @@ def format_resistance(value):
         return f"{value:.3f} Ом"
     else:
         return f"{value:.1f} Ом".rstrip('0').rstrip('.')
-
-# Тестовые примеры
-if __name__ == '__main__':
-    test_codes = ["103", "4R7", "01C", "R047", "472"]
-    for code in test_codes:
-        result = smd_to_resistance(code)
-        if result:
-            print(f"{code} -> {result}")
