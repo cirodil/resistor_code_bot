@@ -324,7 +324,7 @@ BOT_LOG_LEVEL=DEBUG  # DEBUG, INFO, WARNING, ERROR
 
 1. Проверьте [Issues](https://github.com/cirodil/resistor-bot/issues) на GitHub
 2. Создайте новое Issue с описанием проблемы
-3. Напишите в Telegram: [@yourusername](https://t.me/kvgorodetsky)
+3. Напишите в Telegram: [@kvgorodetsky](https://t.me/kvgorodetsky)
 
 ## 🙏 Благодарности
 
