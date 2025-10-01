@@ -3,6 +3,9 @@
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Telegram](https://img.shields.io/badge/Telegram-Bot-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
+![English](https://img.shields.io/badge/English-Documentation-blue)
+
+🇬🇧 [English documentation available here](README_EN.md)
 
 Многофункциональный Telegram бот для определения номиналов резисторов по цветовой маркировке и SMD кодам. Поддерживает все популярные типы резисторов и форматы маркировки.
 
@@ -331,6 +334,11 @@ BOT_LOG_LEVEL=DEBUG  # DEBUG, INFO, WARNING, ERROR
 - [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) - отличная библиотека для Telegram ботов
 - Сообщество электронщиков за тестирование и обратную связь
 - Участникам проекта за идеи и улучшения
+
+---
+## 🌐 Другие языки
+
+- 🇬🇧 [English documentation](README_EN.md)
 
 ---
 
