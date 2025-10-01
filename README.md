@@ -34,7 +34,7 @@
 ### Установка зависимостей
 
 ```bash
-# Клонирование репозитория (если есть)
+# Клонирование репозитория
 git clone https://github.com/cirodil/resistor_code_bot.git
 cd resistor_code_bot
 
