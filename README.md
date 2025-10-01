@@ -35,8 +35,8 @@
 
 ```bash
 # Клонирование репозитория (если есть)
-git clone <your-repo-url>
-cd resistor-code-bot
+git clone <https://github.com/cirodil/resistor_code_bot.git>
+cd resistor_code_bot
 
 # Создание виртуального окружения (рекомендуется)
 python -m venv venv
