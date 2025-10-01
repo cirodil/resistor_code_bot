@@ -22,12 +22,12 @@ if not BOT_TOKEN:
 
 # Импортируем данные и функции из наших модулей
 try:
-    from resistor_data import COLOR_CODES, MULTIPLIERS, TOLERANCE, EN_TO_RU_COLORS
+    from resistor_data import COLOR_CODES, MULTIPLIERS, TOLERANCE, EN_TO_RU_COLORS, INPUT_NORMALIZATION
     from smd_decoder import smd_to_resistance, resistance_to_smd, validate_smd_code
 except ImportError as e:
     logging.error(f"❌ Ошибка импорта модулей: {e}")
     # Создаем заглушки для тестирования
-    COLOR_CODES, MULTIPLIERS, TOLERANCE, EN_TO_RU_COLORS = {}, {}, {}, {}
+    COLOR_CODES, MULTIPLIERS, TOLERANCE, EN_TO_RU_COLORS, INPUT_NORMALIZATION = {}, {}, {}, {}, {}
     def smd_to_resistance(code):
         return None
     def resistance_to_smd(value):
@@ -47,8 +47,14 @@ def get_main_keyboard():
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
+def normalize_color_input(color):
+    """Нормализует ввод цвета, приводя к стандартному виду"""
+    color_lower = color.lower().strip()
+    # Приводим к стандартному варианту написания
+    return INPUT_NORMALIZATION.get(color_lower, color_lower)
+
 def convert_colors_to_russian(colors):
-    """Преобразует названия цветов на русский язык"""
+    """Преобразует названия цветов на русский язык с правильными буквами 'ё'"""
     russian_colors = []
     for color in colors:
         color_lower = color.lower()
@@ -79,7 +85,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
   • Поддержка E24, E96 серий
 
 *Просто отправьте:*
-• Цвета полос (4 или 5 цветов)
+• Цвета полос (4 или 5 цветов) - например: `жёлтый фиолетовый красный золотой`
 • Номинал резистора (1к, 470 Ом, 2.2М)
 • SMD код (103, 4R7, 01C)
 
@@ -107,7 +113,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 *Примеры запросов:*
 
 *Цилиндрические резисторы:*
-Цвета → Номинал: `коричневый черный красный золотой`
+Цвета → Номинал: `коричневый чёрный красный золотой`
 Номинал → Цвета: `1к`, `470 Ом` (покажет 4 и 5 полос)
 
 *SMD резисторы:*
@@ -117,8 +123,9 @@ SMD код → Номинал: `103`, `4R7`
 *Подсказки:*
 • Бот автоматически определит тип вашего запроса
 • Используйте кнопки для выбора режима
-• Все названия цветов выводятся на русском языке
+• Все названия цветов выводятся с правильными буквами "ё"
 • Для номиналов показываются обе маркировки: 4-полосная и 5-полосная
+• Поддерживаются оба варианта написания: "жёлтый" и "желтый", "зелёный" и "зеленый"
     """
     await update.message.reply_text(help_text, parse_mode='Markdown', reply_markup=get_main_keyboard())
 
@@ -137,8 +144,8 @@ async def handle_menu_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
 • Номинал для получения цветовой маркировки
 
 *Примеры цветов:*
-`красный фиолетовый желтый золотой`
-`коричневый черный красный серебряный`
+`красный фиолетовый жёлтый золотой`
+`коричневый чёрный красный серебряный`
 
 *Примеры номиналов:*
 `1.5к` 
@@ -148,6 +155,9 @@ async def handle_menu_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
 *Бот покажет обе маркировки:*
 • 4-полосная (2 цифры, множитель, допуск)
 • 5-полосная (3 цифры, множитель, допуск)
+
+*Примечание:*
+Поддерживаются оба варианта написания: "жёлтый" и "желтый", "зелёный" и "зеленый"
         """
         await update.message.reply_text(help_text, parse_mode='Markdown', reply_markup=get_main_keyboard())
         
@@ -187,33 +197,38 @@ async def handle_menu_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
 Выберите режим работы или просто отправьте запрос:
 
 *Примеры запросов:*
-• Цвета: `коричневый черный красный золотой`
+• Цвета: `коричневый чёрный красный золотой`
 • Номинал: `1к`, `470 Ом`  
 • SMD код: `103`, `4R7`
 
 Бот автоматически определит тип вашего запроса!
+
+*Поддерживаются оба варианта написания:*
+"жёлтый" и "желтый", "зелёный" и "зеленый"
         """
         await update.message.reply_text(welcome_text, parse_mode='Markdown', reply_markup=get_main_keyboard())
 
 def colors_to_resistance(colors):
     """Преобразование цветов в номинал резистора"""
     try:
-        colors = [color.lower() for color in colors]
+        # Нормализуем ввод цветов
+        normalized_colors = [normalize_color_input(color) for color in colors]
+        colors_lower = [color.lower() for color in normalized_colors]
         
-        if len(colors) == 4:  # 4-полосная маркировка
-            digit1 = COLOR_CODES[colors[0]]
-            digit2 = COLOR_CODES[colors[1]]
-            multiplier = MULTIPLIERS[colors[2]]
-            tolerance = TOLERANCE.get(colors[3], '±20%')
+        if len(colors_lower) == 4:  # 4-полосная маркировка
+            digit1 = COLOR_CODES[colors_lower[0]]
+            digit2 = COLOR_CODES[colors_lower[1]]
+            multiplier = MULTIPLIERS[colors_lower[2]]
+            tolerance = TOLERANCE.get(colors_lower[3], '±20%')
             
             resistance = (digit1 * 10 + digit2) * multiplier
             
-        elif len(colors) == 5:  # 5-полосная маркировка
-            digit1 = COLOR_CODES[colors[0]]
-            digit2 = COLOR_CODES[colors[1]]
-            digit3 = COLOR_CODES[colors[2]]
-            multiplier = MULTIPLIERS[colors[3]]
-            tolerance = TOLERANCE.get(colors[4], '±20%')
+        elif len(colors_lower) == 5:  # 5-полосная маркировка
+            digit1 = COLOR_CODES[colors_lower[0]]
+            digit2 = COLOR_CODES[colors_lower[1]]
+            digit3 = COLOR_CODES[colors_lower[2]]
+            multiplier = MULTIPLIERS[colors_lower[3]]
+            tolerance = TOLERANCE.get(colors_lower[4], '±20%')
             
             resistance = (digit1 * 100 + digit2 * 10 + digit3) * multiplier
             
@@ -365,10 +380,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     current_context = user_context.get(user_id, 'main')
     
     # Определяем тип запроса на основе контекста и содержимого
-    words = text.lower().split()
+    words = text.split()
+    
+    # Нормализуем слова для проверки цветов
+    normalized_words = [normalize_color_input(word) for word in words]
     
     # Если явно указаны цвета - обрабатываем как цвета независимо от контекста
-    if words and all(word in COLOR_CODES for word in words):
+    if normalized_words and all(word.lower() in COLOR_CODES for word in normalized_words):
         # Запрос с цветами - цилиндрический резистор
         resistance, tolerance = colors_to_resistance(words)
         if resistance:
@@ -467,7 +485,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 response = ("❌ Не удалось распознать запрос.\n\n"
                           "Возможные варианты:\n"
-                          "• Цвета полос: `красный фиолетовый желтый золотой`\n"
+                          "• Цвета полос: `красный фиолетовый жёлтый золотой`\n"
                           "• Номинал: `1к`, `470 Ом`\n"
                           "• SMD код: `103`, `4R7`\n\n"
                           "Используйте кнопки для выбора режима:")
@@ -487,12 +505,12 @@ def main():
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
         
         # Запуск бота
-        logging.info("🤖 Бот запущен с постоянной клавиатурой!")
+        logging.info("🤖 Бот запущен с поддержкой буквы 'ё'!")
         print("=" * 50)
         print("🤖 Resistor Bot успешно запущен!")
         print("📍 Используйте /start в Telegram")
         print("🎯 Функционал: цветовая маркировка + SMD коды")
-        print("📁 Данные вынесены в отдельные модули")
+        print("🔤 Поддержка буквы 'ё' в названиях цветов")
         print("🔧 Для остановки нажмите Ctrl+C")
         print("=" * 50)
         
