@@ -4,9 +4,10 @@
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Telegram](https://img.shields.io/badge/Telegram-Bot-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
+<<<<<<< HEAD
 ![Russian](https://img.shields.io/badge/Russian-Documentation-red)
 
-🇷🇺 [Russian documentation available here](README.md)
+# 🇷🇺 [Russian documentation available here](README.md)
 
 A multifunctional Telegram bot for determining resistor values from color codes and SMD markings. Supports all popular resistor types and marking formats.
 
@@ -352,6 +353,12 @@ If you encounter issues or have questions:
 - [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) - excellent Telegram bot library
 - Electronics community for testing and feedback
 - Project contributors for ideas and improvements
+
+---
+
+## 🌐 Other Languages
+
+- 🇷🇺 [Документация на русском](README.md)
 
 ---
 
