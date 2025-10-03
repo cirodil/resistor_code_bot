@@ -1,10 +1,9 @@
-```markdown
 # 🤖 Resistor Code Bot - Universal Resistor Assistant
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Telegram](https://img.shields.io/badge/Telegram-Bot-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
-<<<<<<< HEAD
+
 ![Russian](https://img.shields.io/badge/Russian-Documentation-red)
 
 # 🇷🇺 [Russian documentation available here](README.md)
@@ -46,6 +45,7 @@ A multifunctional Telegram bot for determining resistor values from color codes 
 ### Menu Buttons
 
 The bot uses a persistent keyboard with 4 buttons:
+
 ```
 
 [🎨 Cylindrical] [🔤 SMD Resistors]
@@ -134,7 +134,7 @@ _Response:_
 • 103 (E24)
 • 01C (E96)
 
-````
+```
 
 ### Automatic Detection
 
@@ -156,29 +156,29 @@ The bot automatically detects your query type:
 
 #### SMD Codes
 
-| Type           | Format          | Example | Value    | Tolerance |
-| -------------- | --------------- | ------- | -------- | --------- |
-| E24            | 3 digits        | `103`   | 10 kΩ    | ±5%       |
-| E96            | 2 digits + letter | `01C`  | 10 kΩ    | ±1%       |
-| R-format       | With letter R   | `4R7`   | 4.7 Ω    | -         |
-| Small values   | R + digits      | `R047`  | 0.047 Ω  | -         |
+| Type         | Format            | Example | Value   | Tolerance |
+| ------------ | ----------------- | ------- | ------- | --------- |
+| E24          | 3 digits          | `103`   | 10 kΩ   | ±5%       |
+| E96          | 2 digits + letter | `01C`   | 10 kΩ   | ±1%       |
+| R-format     | With letter R     | `4R7`   | 4.7 Ω   | -         |
+| Small values | R + digits        | `R047`  | 0.047 Ω | -         |
 
 ### Color Coding
 
-| Color         | Digit | Multiplier   | Tolerance |
-| ------------- | ----- | ------------ | --------- |
-| ⚫ Black      | 0     | 1            | -         |
-| 🟤 Brown     | 1     | 10           | ±1%       |
-| 🔴 Red       | 2     | 100          | ±2%       |
-| 🟠 Orange    | 3     | 1,000        | -         |
-| 🟡 Yellow    | 4     | 10,000       | -         |
-| 🟢 Green     | 5     | 100,000      | ±0.5%     |
-| 🔵 Blue      | 6     | 1,000,000    | ±0.25%    |
-| 🟣 Violet    | 7     | 10,000,000   | ±0.1%     |
-| ⚪ Gray      | 8     | 100,000,000  | ±0.05%    |
-| ⚪ White     | 9     | 1,000,000,000| -         |
-| 🟡 Gold      | -     | 0.1          | ±5%       |
-| ⚪ Silver    | -     | 0.01         | ±10%      |
+| Color     | Digit | Multiplier    | Tolerance |
+| --------- | ----- | ------------- | --------- |
+| ⚫ Black  | 0     | 1             | -         |
+| 🟤 Brown  | 1     | 10            | ±1%       |
+| 🔴 Red    | 2     | 100           | ±2%       |
+| 🟠 Orange | 3     | 1,000         | -         |
+| 🟡 Yellow | 4     | 10,000        | -         |
+| 🟢 Green  | 5     | 100,000       | ±0.5%     |
+| 🔵 Blue   | 6     | 1,000,000     | ±0.25%    |
+| 🟣 Violet | 7     | 10,000,000    | ±0.1%     |
+| ⚪ Gray   | 8     | 100,000,000   | ±0.05%    |
+| ⚪ White  | 9     | 1,000,000,000 | -         |
+| 🟡 Gold   | -     | 0.1           | ±5%       |
+| ⚪ Silver | -     | 0.01          | ±10%      |
 
 ## 📊 Knowledge Base
 
@@ -190,13 +190,13 @@ The bot automatically detects your query type:
 
 ### Commonly Used Values
 
-| Value  | 4-band                           | 5-band                                     | SMD Codes |
-| ------ | -------------------------------- | ------------------------------------------ | --------- |
-| 10 Ω   | brown-black-black-gold           | brown-black-black-gold-brown               | 10R, 010  |
-| 100 Ω  | brown-black-brown-gold           | brown-black-black-brown-brown              | 101, 01A  |
-| 1 kΩ   | brown-black-red-gold             | brown-black-black-brown-brown              | 102, 01B  |
-| 10 kΩ  | brown-black-orange-gold          | brown-black-black-red-brown                | 103, 01C  |
-| 100 kΩ | brown-black-yellow-gold          | brown-black-black-orange-brown             | 104, 01D  |
+| Value  | 4-band                  | 5-band                         | SMD Codes |
+| ------ | ----------------------- | ------------------------------ | --------- |
+| 10 Ω   | brown-black-black-gold  | brown-black-black-gold-brown   | 10R, 010  |
+| 100 Ω  | brown-black-brown-gold  | brown-black-black-brown-brown  | 101, 01A  |
+| 1 kΩ   | brown-black-red-gold    | brown-black-black-brown-brown  | 102, 01B  |
+| 10 kΩ  | brown-black-orange-gold | brown-black-black-red-brown    | 103, 01C  |
+| 100 kΩ | brown-black-yellow-gold | brown-black-black-orange-brown | 104, 01D  |
 
 ## 🚀 Quick Start
 
@@ -214,7 +214,7 @@ source venv/bin/activate  # Linux/Mac
 
 # Install dependencies
 pip install -r requirements.txt
-````
+```
 
 ### Bot Setup
 
