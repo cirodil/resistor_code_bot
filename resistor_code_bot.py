@@ -63,9 +63,19 @@ def get_language_keyboard():
 
 def normalize_color_input(color):
     """Нормализует ввод цвета, приводя к стандартному виду"""
+    # Приводим к нижнему регистру и убираем пробелы
     color_lower = color.lower().strip()
+    
+    # Заменяем букву 'ё' на 'е' для единообразия
+    color_lower = color_lower.replace('ё', 'е')
+    
     # Приводим к стандартному варианту написания
-    return INPUT_NORMALIZATION.get(color_lower, color_lower)
+    normalized = INPUT_NORMALIZATION.get(color_lower, color_lower)
+    
+    # Также заменяем 'ё' на 'е' в нормализованном результате
+    normalized = normalized.replace('ё', 'е')
+    
+    return normalized
 
 def convert_colors_to_target_language(colors, target_language='ru'):
     """Преобразует названия цветов на указанный язык"""
@@ -375,22 +385,21 @@ def colors_to_resistance(colors):
     try:
         # Нормализуем ввод цветов
         normalized_colors = [normalize_color_input(color) for color in colors]
-        colors_lower = [color.lower() for color in normalized_colors]
         
-        if len(colors_lower) == 4:  # 4-полосная маркировка
-            digit1 = COLOR_CODES[colors_lower[0]]
-            digit2 = COLOR_CODES[colors_lower[1]]
-            multiplier = MULTIPLIERS[colors_lower[2]]
-            tolerance = TOLERANCE.get(colors_lower[3], '±20%')
+        if len(normalized_colors) == 4:  # 4-полосная маркировка
+            digit1 = COLOR_CODES[normalized_colors[0]]
+            digit2 = COLOR_CODES[normalized_colors[1]]
+            multiplier = MULTIPLIERS[normalized_colors[2]]
+            tolerance = TOLERANCE.get(normalized_colors[3], '±20%')
             
             resistance = (digit1 * 10 + digit2) * multiplier
             
-        elif len(colors_lower) == 5:  # 5-полосная маркировка
-            digit1 = COLOR_CODES[colors_lower[0]]
-            digit2 = COLOR_CODES[colors_lower[1]]
-            digit3 = COLOR_CODES[colors_lower[2]]
-            multiplier = MULTIPLIERS[colors_lower[3]]
-            tolerance = TOLERANCE.get(colors_lower[4], '±20%')
+        elif len(normalized_colors) == 5:  # 5-полосная маркировка
+            digit1 = COLOR_CODES[normalized_colors[0]]
+            digit2 = COLOR_CODES[normalized_colors[1]]
+            digit3 = COLOR_CODES[normalized_colors[2]]
+            multiplier = MULTIPLIERS[normalized_colors[3]]
+            tolerance = TOLERANCE.get(normalized_colors[4], '±20%')
             
             resistance = (digit1 * 100 + digit2 * 10 + digit3) * multiplier
             
