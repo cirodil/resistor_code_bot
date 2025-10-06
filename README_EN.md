@@ -315,7 +315,6 @@ We welcome contributions to this project!
 - [ ] Capacitors and inductors support
 - [ ] Web interface for advanced analysis
 - [ ] API for integration with other applications
-- [ ] Multilingual support
 - [ ] User query history
 
 ## 📄 License
