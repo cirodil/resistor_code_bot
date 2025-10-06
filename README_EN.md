@@ -8,85 +8,77 @@
 
 # 🇷🇺 [Russian documentation available here](README.md)
 
-A multifunctional Telegram bot for determining resistor values from color codes and SMD markings. Supports all popular resistor types and marking formats.
+Multifunctional Telegram bot to determine the values of resistors by color codes and SMD codes. Supports all popular types of resistors and marking formats.
 
 ## ✨ Features
 
 ### 🎨 Cylindrical Resistors
 
-- **Value determination** from color bands (4 and 5 bands)
-- **Get color coding** for a given resistance value
-- **Simultaneous display** of 4-band and 5-band markings
-- **English color names** in responses
+- **Value determination** based on color bands (4 and 5 bands)
+- **Color code generation** from a given value
+- **Simultaneous output** of both 4-band and 5-band markings
+- **Russian names** of colors in responses
 
 ### 🔤 SMD Resistors
 
-- **Decoding SMD codes** to resistance values
+- **Decoding SMD codes** into resistance values
 - **Generating SMD codes** from resistance values
-- **Supported series**: E24 (±5%), E96 (±1%)
+- **Series support**: E24 (±5%), E96 (±1%)
 - **Code formats**: 3-digit, 4-digit, R-format
 
-### 🎯 User-Friendly Interface
+### 🎯 Convenient Interface
 
-- **Persistent keyboard** with quick access to all functions
-- **Automatic query type detection**
+- **Persistent keyboard** with quick access to all features
+- **Automatic request type detection**
 - **Contextual modes** for precise control
-- **Detailed examples** and hints
+- **Detailed examples** and tips
 
 ## 🎯 Usage
 
-### Basic Commands
+### Main Commands
 
 | Command  | Description                |
 | -------- | -------------------------- |
 | `/start` | Start working with the bot |
-| `/help`  | Usage help                 |
+| `/help`  | Help using the bot         |
 
 ### Menu Buttons
 
 The bot uses a persistent keyboard with 4 buttons:
 
 ```
-
 [🎨 Cylindrical] [🔤 SMD Resistors]
 [ℹ️ Help] [🏠 Main Menu]
-
 ```
 
-### Query Examples
+### Example Queries
 
 #### 🎨 Cylindrical Resistors
 
-**Determining value from colors:**
+**Determination of value by colors:**
 
 ```
-
 brown black red gold
-
 ```
 
-_Response: 1.00 kΩ ±5%_
+_Answer: 1.00 kΩ ±5%_
 
-**Getting markings from value:**
-
-```
-
-470 Ohm
+**Getting marking by value:**
 
 ```
-
-_Response shows both markings:_
-
+470 Ω
 ```
 
-🎨 Color codings:
+_Answer shows both markings:_
+
+```
+🎨 Color Markings:
 
 4-band:
 yellow → violet → brown → gold
 
 5-band:
 yellow → violet → black → black → brown
-
 ```
 
 #### 🔤 SMD Resistors
@@ -94,56 +86,46 @@ yellow → violet → black → black → brown
 **Decoding codes:**
 
 ```
-
 103
-
 ```
 
-_Response: 10 kΩ (E24)_
+_Answer: 10 kΩ (E24)_
 
 ```
-
 4R7
-
 ```
 
-_Response: 4.7 Ω (R-format)_
+_Answer: 4.7 Ω (R-format)_
 
 ```
-
 01C
-
 ```
 
-_Response: 10 kΩ (E96)_
+_Answer: 10 kΩ (E96)_
 
-**Generating codes:**
+**Generation of codes:**
 
 ```
-
 10k
-
 ```
 
-_Response:_
+_Answer:_
 
 ```
-
 💎 Value: 10.00 kΩ
-🔤 SMD codes:
+🔤 SMD Codes:
 • 103 (E24)
 • 01C (E96)
-
 ```
 
 ### Automatic Detection
 
-The bot automatically detects your query type:
+The bot automatically detects your request type:
 
-- **Colors** → shows resistance value
-- **Resistance value** → shows color codings
-- **SMD code** → shows resistance value
-- **Resistance value in SMD mode** → shows SMD codes
+- **Colors** → displays value
+- **Value** → displays color markings
+- **SMD code** → displays value
+- **Value in SMD mode** → displays SMD codes
 
 ## 🔧 Technical Details
 
@@ -163,21 +145,21 @@ The bot automatically detects your query type:
 | R-format     | With letter R     | `4R7`   | 4.7 Ω   | -         |
 | Small values | R + digits        | `R047`  | 0.047 Ω | -         |
 
-### Color Coding
+### Color Encoding
 
 | Color     | Digit | Multiplier    | Tolerance |
 | --------- | ----- | ------------- | --------- |
-| ⚫ Black  | 0     | 1             | -         |
-| 🟤 Brown  | 1     | 10            | ±1%       |
-| 🔴 Red    | 2     | 100           | ±2%       |
-| 🟠 Orange | 3     | 1,000         | -         |
-| 🟡 Yellow | 4     | 10,000        | -         |
-| 🟢 Green  | 5     | 100,000       | ±0.5%     |
-| 🔵 Blue   | 6     | 1,000,000     | ±0.25%    |
-| 🟣 Violet | 7     | 10,000,000    | ±0.1%     |
-| ⚪ Gray   | 8     | 100,000,000   | ±0.05%    |
+| 🖤 Black  | 0     | 1             | -         |
+| 🤎 Brown  | 1     | 10            | ±1%       |
+| ❤️ Red    | 2     | 100           | ±2%       |
+| 🧡 Orange | 3     | 1,000         | -         |
+| 💛 Yellow | 4     | 10,000        | -         |
+| 💚 Green  | 5     | 100,000       | ±0.5%     |
+| 💙 Blue   | 6     | 1,000,000     | ±0.25%    |
+| 💜 Violet | 7     | 10,000,000    | ±0.1%     |
+| 🤍 Gray   | 8     | 100,000,000   | ±0.05%    |
 | ⚪ White  | 9     | 1,000,000,000 | -         |
-| 🟡 Gold   | -     | 0.1           | ±5%       |
+| 💛 Gold   | -     | 0.1           | ±5%       |
 | ⚪ Silver | -     | 0.01          | ±10%      |
 
 ## 📊 Knowledge Base
@@ -188,7 +170,7 @@ The bot automatically detects your query type:
 - **E96 (96 values)**: ±1% tolerance
 - **E12, E48, E192**: can be added if needed
 
-### Commonly Used Values
+### Common Values
 
 | Value  | 4-band                  | 5-band                         | SMD Codes |
 | ------ | ----------------------- | ------------------------------ | --------- |
@@ -200,7 +182,7 @@ The bot automatically detects your query type:
 
 ## 🚀 Quick Start
 
-### Installing Dependencies
+### Install Dependencies
 
 ```bash
 # Clone repository
@@ -216,14 +198,14 @@ source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 ```
 
-### Bot Setup
+### Configure the Bot
 
 1. **Create a bot** via [@BotFather](https://t.me/BotFather) in Telegram
-2. **Get the token** and create `.env` file:
+2. **Get token** and create an `.env` file:
 
 ```env
 BOT_TOKEN=your_telegram_bot_token_here
-BOT_LOG_LEVEL=INFO  # optional: DEBUG, INFO, WARNING, ERROR
+BOT_LOG_LEVEL=INFO  # optionally: DEBUG, INFO, WARNING, ERROR
 ```
 
 3. **Run the bot**:
@@ -238,18 +220,18 @@ python resistor_code_bot.py
 resistor-bot/
 ├── resistor_code_bot.py          # Main bot file
 ├── resistor_data.py         # Color coding data
-├── smd_decoder.py           # SMD resistor decoder
+├── smd_decoder.py           # SMD decoder logic
 ├── .env                     # Environment variables (created)
-├── .env.example             # Environment variables example
+├── .env.example             # Example env variables
 ├── requirements.txt         # Python dependencies
 └── README.md               # This documentation
 ```
 
 ### Project Modules
 
-- **`resistor_code_bot.py`** - main bot module with command handlers
-- **`resistor_data.py`** - color, multiplier, and tolerance dictionaries
-- **`smd_decoder.py`** - SMD code processing logic
+- **`resistor_code_bot.py`** - main module with command handlers
+- **`resistor_data.py`** - dictionaries of colors, multipliers, and tolerances
+- **`smd_decoder.py`** - logic for handling SMD codes
 
 ## 🛠 Development
 
@@ -262,7 +244,7 @@ resistor-bot/
 ### Local Development
 
 ```bash
-# Install in development mode
+# Installation in development mode
 pip install -r requirements.txt
 
 # Run the bot
@@ -277,32 +259,32 @@ python -c "from smd_decoder import smd_to_resistance; print(smd_to_resistance('1
 
 1. **New colors**: edit `resistor_data.py`
 2. **New SMD codes**: edit `smd_decoder.py`
-3. **New commands**: add handlers to `resistor_code_bot.py`
+3. **New commands**: add handlers in `resistor_code_bot.py`
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-**Bot won't start:**
+**Bot doesn't start:**
 
-- Check for `.env` file with token
+- Check that you have created an `.env` file with the token
 - Ensure all dependencies are installed
-- Check logs for errors
+- Verify logs for errors
 
-**Queries not recognized:**
+**Requests not recognized:**
 
-- Use English color names
-- For resistance values, specify units: Ω, kΩ, MΩ
+- Use Russian color names
+- Specify units for values: Ω, kΩ, MΩ
 - SMD codes must be in correct format
 
-**Calculation errors:**
+**Errors in calculations:**
 
-- Check color order correctness
-- Ensure resistance value is within valid range
+- Check the order of colors
+- Make sure the value is within valid range
 
 ### Logging
 
-Log level can be configured via environment variable:
+Logging level can be configured through environment variable:
 
 ```env
 BOT_LOG_LEVEL=DEBUG  # DEBUG, INFO, WARNING, ERROR
@@ -310,70 +292,54 @@ BOT_LOG_LEVEL=DEBUG  # DEBUG, INFO, WARNING, ERROR
 
 ## 🤝 Contributing
 
-We welcome contributions to the project!
+We welcome contributions to this project!
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push the branch (`git push origin feature/amazing-feature`)
+2. Create a branch for your feature (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
 ### Code Requirements
 
-- PEP8 compliance
-- Documentation for new functions
+- Adhere to PEP8
+- Documentation for new features
 - Tests for new functionality
 - Compatibility with existing API
 
-## 📝 Development Plans
+## 📝 Roadmap
 
-- [ ] 6-band marking support (temperature coefficient)
-- [ ] Standard value database
+- [ ] Support for 6-band marking (temperature coefficient)
+- [ ] Database of standard values
 - [ ] Voltage divider calculator
-- [ ] Capacitor and inductor support
+- [ ] Capacitors and inductors support
 - [ ] Web interface for advanced analysis
 - [ ] API for integration with other applications
-- [ ] Multi-language support
+- [ ] Multilingual support
 - [ ] User query history
 
 ## 📄 License
 
-This project is distributed under the MIT license.
+This project is licensed under the MIT license.
 
 ## 📞 Support
 
-If you encounter issues or have questions:
+If you encounter issues or questions:
 
 1. Check [Issues](https://github.com/cirodil/resistor-bot/issues) on GitHub
-2. Create a new Issue with problem description
-3. Contact on Telegram: [@kvgorodetsky](https://t.me/kvgorodetsky)
+2. Create a new issue describing the problem
+3. Contact via Telegram: [@kvgorodetsky](https://t.me/kvgorodetsky)
 
 ## 🙏 Acknowledgments
 
-- [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) - excellent Telegram bot library
+- [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) - excellent library for Telegram bots
 - Electronics community for testing and feedback
 - Project contributors for ideas and improvements
 
 ---
 
-## 🌐 Other Languages
-
-- 🇷🇺 [Документация на русском](README.md)
-
----
-
-## 🌐 Other Languages
-
-- 🇷🇺 [Russian documentation](README.md)
-
----
-
 **⭐ If you like the project, give it a star on GitHub!**
 
-_Made with ❤️ for the electronics and radio enthusiasts community_
+_Made with ❤️ for electronics enthusiasts and hobbyists_
 
-_Updated: October 2025_
-
-```
-
-```
+_Last updated: October 2025_

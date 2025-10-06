@@ -6,7 +6,6 @@
 ![English](https://img.shields.io/badge/English-Documentation-blue)
 
 🇬🇧 [English documentation available here](README_EN.md)
-<<<<<<< HEAD
 
 # Многофункциональный Telegram бот для определения номиналов резисторов по цветовой маркировке и SMD кодам...
 
