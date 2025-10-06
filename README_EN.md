@@ -48,7 +48,7 @@ The bot uses a persistent keyboard with 4 buttons:
 
 ```
 [🎨 Cylindrical] [🔤 SMD Resistors]
-[ℹ️ Help] [🏠 Main Menu]
+[🌐 Language] [ℹ️ Help] [🏠 Main Menu]
 ```
 
 ### Example Queries
