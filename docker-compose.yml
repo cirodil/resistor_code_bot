@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  resistor-bot:
+    build: .
+    container_name: resistor-telegram-bot
+    restart: unless-stopped
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - BOT_LOG_LEVEL=INFO
+    volumes:
+      - ./logs:/app/logs
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
