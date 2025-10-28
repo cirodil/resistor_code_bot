@@ -1,8 +1,8 @@
 import logging
 import re
 import os
-from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 from dotenv import load_dotenv
 
 # Загрузка переменных окружения
@@ -44,21 +44,15 @@ def get_main_keyboard(language='ru'):
     if language == 'en':
         keyboard = [
             [KeyboardButton("🎨 Cylindrical"), KeyboardButton("🔤 SMD Resistors")],
-            [KeyboardButton("🌐 Language"), KeyboardButton("ℹ️ Help"), KeyboardButton("🏠 Main Menu")]
+            [KeyboardButton("🌐 Language"), KeyboardButton("ℹ️ Help")],
+            [KeyboardButton("💝 Donate"), KeyboardButton("🏠 Main Menu")]
         ]
     else:
         keyboard = [
             [KeyboardButton("🎨 Цилиндрические"), KeyboardButton("🔤 SMD резисторы")],
-            [KeyboardButton("🌐 Язык"), KeyboardButton("ℹ️ Помощь"), KeyboardButton("🏠 Главное меню")]
+            [KeyboardButton("🌐 Язык"), KeyboardButton("ℹ️ Помощь")],
+            [KeyboardButton("💝 Поддержать"), KeyboardButton("🏠 Главное меню")]
         ]
-    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-
-def get_language_keyboard():
-    """Клавиатура выбора языка"""
-    keyboard = [
-        [KeyboardButton("🇷🇺 Русский"), KeyboardButton("🇺🇸 English")],
-        [KeyboardButton("🔙 Back")]
-    ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 def normalize_color_input(color):
@@ -170,6 +164,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 *Basic commands:*
 `/start` - start working
 `/help` - show this help
+`/donate` - support project development
 
 *Request examples:*
 
@@ -186,6 +181,8 @@ Value → SMD code: `10k`, `4.7 Ohm`
 • Use buttons to select mode
 • Both Russian and English color names are supported
 • Both 4-band and 5-band markings are shown
+
+*Support the project via "💝 Donate" button!*
         """
     else:
         help_text = """
@@ -194,6 +191,7 @@ Value → SMD code: `10k`, `4.7 Ohm`
 *Основные команды:*
 `/start` - начать работу
 `/help` - показать эту справку
+`/donate` - поддержать развитие проекта
 
 *Примеры запросов:*
 
@@ -210,6 +208,8 @@ SMD код → Номинал: `103`, `4R7`
 • Используйте кнопки для выбора режима
 • Поддерживаются русские и английские названия цветов
 • Для номиналов показываются обе маркировки: 4-полосная и 5-полосная
+
+*Поддержите проект через кнопку "💝 Поддержать"!*
         """
     await update.message.reply_text(help_text, parse_mode='Markdown', 
                                   reply_markup=get_main_keyboard(language))
@@ -362,6 +362,10 @@ Bot automatically detects your request type!
             text = "🌐 *Выберите язык*"
         await update.message.reply_text(text, parse_mode='Markdown', 
                                       reply_markup=get_language_keyboard())
+    
+    # Обработка кнопки доната - ДОБАВЛЯЕМ ЭТОТ БЛОК
+    elif text in ["💝 Поддержать", "💝 Donate"]:
+        await handle_donate(update, context)
     
     elif text == "🇷🇺 Русский":
         user_context[user_id]['language'] = 'ru'
@@ -548,10 +552,14 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_context[user_id] = {'mode': 'main', 'language': 'ru'}
     
     # Сначала проверяем, не является ли сообщение нажатием кнопки меню
-    menu_buttons = ["🎨 Цилиндрические", "🔤 SMD резисторы", "ℹ️ Помощь", "🏠 Главное меню",
-                   "🎨 Cylindrical", "🔤 SMD Resistors", "ℹ️ Help", "🏠 Main Menu",
-                   "🌐 Язык", "🌐 Language", "🇷🇺 Русский", "🇺🇸 English", "🔙 Back"]
+    menu_buttons = [
+        "🎨 Цилиндрические", "🔤 SMD резисторы", "ℹ️ Помощь", "🏠 Главное меню",
+        "🎨 Cylindrical", "🔤 SMD Resistors", "ℹ️ Help", "🏠 Main Menu",
+        "🌐 Язык", "🌐 Language", "🇷🇺 Русский", "🇺🇸 English", "🔙 Back",
+        "💝 Поддержать", "💝 Donate"  # Добавляем кнопки доната
+    ]
     
+       
     if text in menu_buttons:
         await handle_menu_buttons(update, context)
         return
@@ -740,6 +748,74 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(response, parse_mode='Markdown', 
                                   reply_markup=get_main_keyboard(language))
 
+async def handle_donate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработчик кнопки доната"""
+    user_id = update.effective_user.id
+    language = get_user_language(user_id)
+    
+    # ЗАМЕНИТЕ ЭТУ ССЫЛКУ НА ВАШУ РЕАЛЬНУЮ ССЫЛКУ CLOUDTIPS
+    cloudtips_url = "https://pay.cloudtips.ru/p/0b2dab67"
+    
+    # Создаем инлайн-клавиатуру с ссылкой на CloudTips
+    if language == 'en':
+        keyboard = [
+            [InlineKeyboardButton("💝 Donate via CloudTips", url=cloudtips_url)],
+            [InlineKeyboardButton("🔙 Back to Main Menu", callback_data="back_to_main")]
+        ]
+        text = """
+🤗 *Support the Project*
+
+If you find this bot useful and want to support its development, you can make a donation via CloudTips.
+
+Your support helps:
+• Maintain and improve the bot
+• Add new features
+• Cover server costs
+
+Thank you for your support! ❤️
+        """
+    else:
+        keyboard = [
+            [InlineKeyboardButton("💝 Поддержать через CloudTips", url=cloudtips_url)],
+            [InlineKeyboardButton("🔙 Назад в главное меню", callback_data="back_to_main")]
+        ]
+        text = """
+🤗 *Поддержать проект*
+
+Если бот оказался полезным и вы хотите поддержать его развитие, вы можете сделать донат через CloudTips.
+
+Ваша поддержка поможет:
+• Поддерживать и улучшать бота
+• Добавлять новые функции
+• Покрывать расходы на сервер
+
+Спасибо за вашу поддержку! ❤️
+        """
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(text, parse_mode='Markdown', reply_markup=reply_markup)
+
+# Добавляем обработчик для инлайн-кнопок
+async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработчик инлайн-кнопок"""
+    query = update.callback_query
+    await query.answer()
+    
+    if query.data == "back_to_main":
+        user_id = query.from_user.id
+        language = get_user_language(user_id)
+        # Удаляем сообщение с донатом и возвращаем главное меню
+        await query.delete_message()
+        welcome_text = "🏠 *Главное меню*" if language == 'ru' else "🏠 *Main Menu*"
+        await context.bot.send_message(chat_id=query.message.chat_id, 
+                                     text=welcome_text,
+                                     parse_mode='Markdown',
+                                     reply_markup=get_main_keyboard(language))
+
+async def donate_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработчик команды /donate"""
+    await handle_donate(update, context)
+
 def main():
     """Основная функция"""
     try:
@@ -748,16 +824,21 @@ def main():
         # Обработчики команд
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("help", help_command))
+        application.add_handler(CommandHandler("donate", donate_command))  # Добавляем команду доната
+        
+        # Обработчик инлайн-кнопок
+        application.add_handler(CallbackQueryHandler(handle_callback_query))
         
         # Обработчик текстовых сообщений (включая кнопки меню)
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
         
         # Запуск бота
-        logging.info("🤖 Bot started with multilingual support!")
+        logging.info("🤖 Bot started with multilingual support and donations!")
         print("=" * 50)
         print("🤖 Resistor Code Bot successfully started!")
         print("📍 Use /start in Telegram")
         print("🎯 Features: color coding + SMD codes")
+        print("💝 Donations: CloudTips integration")
         print("🌐 Multilingual support: Russian & English")
         print("🔧 Press Ctrl+C to stop")
         print("=" * 50)
