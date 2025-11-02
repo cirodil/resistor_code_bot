@@ -55,6 +55,14 @@ def get_main_keyboard(language='ru'):
         ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
+def get_language_keyboard():
+    """Клавиатура выбора языка"""
+    keyboard = [
+        [KeyboardButton("🇷🇺 Русский"), KeyboardButton("🇺🇸 English")],
+        [KeyboardButton("🔙 Назад")]
+    ]
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
 def normalize_color_input(color):
     """Нормализует ввод цвета, приводя к стандартному виду"""
     # Приводим к нижнему регистру и убираем пробелы
@@ -362,8 +370,8 @@ Bot automatically detects your request type!
             text = "🌐 *Выберите язык*"
         await update.message.reply_text(text, parse_mode='Markdown', 
                                       reply_markup=get_language_keyboard())
-    
-    # Обработка кнопки доната - ДОБАВЛЯЕМ ЭТОТ БЛОК
+            
+    # Обработка кнопки доната 
     elif text in ["💝 Поддержать", "💝 Donate"]:
         await handle_donate(update, context)
     
@@ -378,7 +386,14 @@ Bot automatically detects your request type!
         user_context[user_id]['mode'] = 'main'
         await update.message.reply_text("✅ Language changed to English", 
                                       reply_markup=get_main_keyboard('en'))
-    
+        
+    elif text == "🔙 Назад":
+        user_context[user_id]['mode'] = 'main'
+        language = get_user_language(user_id)
+        await update.message.reply_text(
+            "🏠", 
+            reply_markup=get_main_keyboard(language))
+        
     elif text == "🔙 Back":
         user_context[user_id]['mode'] = 'main'
         await update.message.reply_text("🏠", 
