@@ -1,4 +1,5 @@
 import re
+import math
 from resistor_data import E24_SERIES, E96_SERIES
 
 # E96 multiplier codes (letters)
@@ -38,7 +39,11 @@ def validate_smd_code(code):
     if re.match(r'^[0-9]{3}$', code):
         return True
     
-    # 4-digit code (E96)
+    # 4-digit numeric code (precision resistors) - ДОБАВЛЯЕМ ЭТУ ПРОВЕРКУ
+    if re.match(r'^[0-9]{4}$', code):
+        return True
+    
+    # 4-digit code with letter (E96)
     if re.match(r'^[0-9]{2}[A-Z]$', code):
         return code[:2] in E96_CODES and code[2] in E96_MULTIPLIERS
     
@@ -66,6 +71,13 @@ def smd_to_resistance(code):
             multiplier = 10 ** int(code[2])
             resistance = significant * multiplier
             return format_resistance(resistance), "E24 (3-digit)"
+        
+        # 4-digit numeric code (precision resistors) - ДОБАВЛЯЕМ ЭТОТ БЛОК
+        elif re.match(r'^[0-9]{4}$', code):
+            significant = int(code[:3])
+            multiplier = 10 ** int(code[3])
+            resistance = significant * multiplier
+            return format_resistance(resistance), "Precision (4-digit)"
         
         # 4-digit code with letter (E96 series)
         elif re.match(r'^[0-9]{2}[A-Z]$', code):
@@ -146,6 +158,12 @@ def resistance_to_smd(resistance_str):
             codes.append(e96_code)
             series_types.append("E96")
         
+        # Precision 4-digit code - ДОБАВЛЯЕМ ЭТОТ БЛОК
+        precision_code = resistance_to_precision(resistance)
+        if precision_code:
+            codes.append(precision_code)
+            series_types.append("Precision")
+
         # R-format code (for resistances < 100 Ohm)
         r_code = resistance_to_r_format(resistance)
         if r_code:
@@ -160,6 +178,38 @@ def resistance_to_smd(resistance_str):
     
     except Exception as e:
         return f"Conversion error: {str(e)}"
+
+def resistance_to_precision(resistance):
+    """Преобразование в 4-значный точный код"""
+    if resistance < 0.1 or resistance > 999000000:
+        return None
+    
+    # Find suitable multiplier
+    multiplier_value = 1
+    value = resistance
+    
+    while value < 100 and multiplier_value > 0.001:
+        multiplier_value /= 10
+        value = resistance / multiplier_value
+    
+    while value >= 1000 and multiplier_value < 1000000:
+        multiplier_value *= 10
+        value = resistance / multiplier_value
+    
+    if value < 100 or value >= 1000:
+        return None
+    
+    # Round to integer
+    value_int = int(round(value))
+    
+    # Check if it's a standard E96 value
+    standard_value = value_int / 100.0
+    if standard_value in E96_SERIES:
+        # Use E96 coding instead for standard values
+        return None
+    
+    # Format as 4-digit code
+    return f"{value_int:03d}{int(math.log10(multiplier_value))}"
 
 def resistance_to_e24(resistance):
     """Преобразование в E24 код (3-digit)"""
